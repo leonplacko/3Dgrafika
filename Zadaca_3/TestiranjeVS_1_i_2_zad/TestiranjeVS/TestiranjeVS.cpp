@@ -387,9 +387,7 @@ Vec3f view_transform(int nx, int ny, float n, float f, float r, float l, float t
     Matrix Mcam(4, 4);
     Matrix Mvp(4, 4);
     Matrix P(4, 4);
-    
-    f = 1000;
-    n = e[2];
+   
 
     for (int i = 0; i < 4; i++)
     {
@@ -437,29 +435,35 @@ Vec3f view_transform(int nx, int ny, float n, float f, float r, float l, float t
 
     Matrix adj(4, 4);
     Vec3f pomocni;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 3; j++)
         {
             
             if (i == 0) {
                 pomocni = u;
+                adj[i][j] = pomocni[j];
             }
             else if (i == 1) {
                 pomocni = v;
+                adj[i][j] = pomocni[j];
+            }
+            else if (i == 2){
+                pomocni = w;
+                adj[i][j] = pomocni[j];
             }
             else {
-                pomocni = w;
+                pomocni = e;
+                adj[i][j] = pomocni[j];
             }
-            adj[i][j] = pomocni[j];
+            
         }
     }
-    adj[3][0] = e[0];
-    adj[3][1] = e[1];
-    adj[3][2] = e[2];
-
+    adj[0][3] = 0;
+    adj[1][3] = 0;
+    adj[2][3] = 0;
+    adj[3][3] = 1;
     
-    //napuni adjunktu
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 4; j++)
@@ -468,6 +472,7 @@ Vec3f view_transform(int nx, int ny, float n, float f, float r, float l, float t
         }
     }
 
+    /*cout << "Mcam" << endl << endl;;
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 4; j++)
@@ -475,21 +480,73 @@ Vec3f view_transform(int nx, int ny, float n, float f, float r, float l, float t
             cout << Mcam[i][j] << " ";
         }
         cout << endl;
-    }
+    }*/
     
     Matrix M1 = Mcam * tockaM;
+
+    /*cout << "M1" << endl << endl;;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 1; j++)
+        {
+            cout << M1[i][j] << " ";
+        }
+        cout << endl;
+    }*/
+
     Matrix M2 = P * M1;
+
+    /*cout << "M2" << endl << endl;;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 1; j++)
+        {
+            cout << M2[i][j] << " ";
+        }
+        cout << endl;
+    }*/
+
     Matrix M3 = Morth * M2;
+
+    /*cout << "M3" << endl << endl;;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 1; j++)
+        {
+            cout << M3[i][j] << " ";
+        }
+        cout << endl;
+    }*/
+
     Matrix M4 = Mvp * M3;
 
-    
+    /*cout << "M4" << endl << endl;;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 1; j++)
+        {
+            cout << M4[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+    cout << "Mvp" << endl << endl;;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            cout << Mvp[i][j] << " ";
+        }
+        cout << endl;
+    }*/
 
     for (int i = 0; i < 3; i++)
     {
         M4[i][0] = M4[i][0] / M4[3][0];
     }
 
-    return Vec3f(M4[0][0], M4[1][0], M4[2][0]);
+    //cout << endl;
+    return Vec3f(M4[0][0], M4[1][0], M4[2][0]).normalize();
 
 }
 
@@ -600,14 +657,24 @@ void render(const Objects& objects, const Lights& lights, Texture t)
             float y = -(2 * (j + 0.5) / (float)height - 1) * tan(fov / 2.);
             // definiraj smjer
             Vec3f dir = Vec3f(x, y, -1).normalize();
-            //view_transform(width, height, )
             
+
+            float rad = 0.0174533;
+            float a = cos(10 * rad);
+            float b = sin(10 * rad);
+            float c = -b;
+            //pomak za 10 stupnjeva po y osi, vrijednosti directiona nisu dobri :(
+            //dir = view_transform(1024, 786, 0.01, 1000, -50, 50, 50, -50, Vec3f(a, b, 0), Vec3f(0, 1, 0), Vec3f(c, a, 1), Vec3f(0, 0, 0), dir);
+            //cout << dir << endl;
+
             buffer[i + j * width] = cast_ray(Vec3f(0, 0, 2), dir, objects, lights, 3, i, j, t);
         }
     }
 
     // spremanje slike u vanjsku datoteku
     std::ofstream ofs;
+
+    //za primjenu transformacije treba upisati da rendera u datoteku transform ppm
     ofs.open("./sfere.ppm", ofstream::binary);
     // oblikuj po ppm formatu
     ofs << "P6\n"
@@ -639,6 +706,7 @@ int main()
     Cylinder cl1(Vec3f(15, 5, 30), 2, 8, purple);
     triangle t1(Vec3f(-1, -1.5, -10), Vec3f(-1.5, -2, -10), Vec3f(-2, -2, -10), grey);
     
+    
 
     cout << endl;
    
@@ -665,8 +733,7 @@ int main()
     float a = cos(10 * rad);
     float b = sin(10 * rad);
     float c = -b;
-    Vec3f newform = view_transform(1024, 786, 0.1, 1000, -50, 50, 50, -50, Vec3f(a, b, 0), Vec3f(0, 1, 0), Vec3f(c, a, 1), Vec3f(0, 0, 0), Vec3f(0.5, 0.5, -1));
-
+    Vec3f newform = view_transform(1024, 786, 0.01, 1000, -50, 50, 50, -50, Vec3f(a, b, 0), Vec3f(0, 1, 0), Vec3f(c, a, 1), Vec3f(0, 0, 0), Vec3f(0.5, 0.5, -1));
     cout << newform[0] << " " << newform[1] << " " << newform[2] << endl;
     render(objs, lights, t);
 
