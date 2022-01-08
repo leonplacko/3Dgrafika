@@ -1,0 +1,3 @@
+﻿  VSGLtestiranje.cpp
+C:\Users\Playa\Desktop\VSGLtestiranje\VSGLtestiranje\OBJ_Loader.h(950,18): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  VSGLtestiranje.vcxproj -> C:\Users\Playa\Desktop\VSGLtestiranje\x64\Debug\VSGLtestiranje.exe
